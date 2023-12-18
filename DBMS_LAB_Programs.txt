@@ -1,0 +1,182 @@
+CREATE TABLE PUBLISHER (
+    Name VARCHAR(255) PRIMARY KEY,
+    Address VARCHAR(255),
+    Phone int
+);
+
+CREATE TABLE BOOK (
+    Book_id INT PRIMARY KEY,
+    Title VARCHAR(255),
+    Publisher_Name VARCHAR(255),
+    Pub_Year INT,
+    FOREIGN KEY (Publisher_Name) REFERENCES PUBLISHER(Name) ON DELETE CASCADE
+);
+
+CREATE TABLE BOOK_AUTHORS (
+    Book_id INT,
+    Author_Name VARCHAR(255),
+    PRIMARY KEY (Book_id, Author_Name),
+    FOREIGN KEY (Book_id) REFERENCES BOOK(Book_id) ON DELETE CASCADE
+);
+
+CREATE TABLE LIBRARY_PROGRAMME (
+    Programme_id INT PRIMARY KEY,
+    Programme_Name VARCHAR(255),
+    Address VARCHAR(255)
+);
+
+CREATE TABLE BOOK_COPIES (
+    Book_id INT,
+    Programme_id INT,
+    No_of_Copies INT,
+    PRIMARY KEY (Book_id, Programme_id),
+    FOREIGN KEY (Book_id) REFERENCES BOOK(Book_id) ON DELETE CASCADE,
+    FOREIGN KEY (Programme_id) REFERENCES LIBRARY_PROGRAMME(Programme_id) ON DELETE CASCADE
+);
+
+CREATE TABLE BOOK_LENDING (
+    Book_id INT,
+    Programme_id INT,
+    Card_No INT,
+    Date_Out DATE,
+    Due_Date DATE,
+    PRIMARY KEY (Book_id, Programme_id, Card_No),
+    FOREIGN KEY (Book_id) REFERENCES BOOK(Book_id) ON DELETE CASCADE,
+    FOREIGN KEY (Programme_id) REFERENCES LIBRARY_PROGRAMME(Programme_id) ON DELETE CASCADE
+);
+
+INSERT INTO PUBLISHER (Name, Address, Phone)
+VALUES('Publisher A', 'Address A', 1234567858),
+      ('Publisher B', 'Address B', 9876543245),
+      ('Publisher C', 'Address C', 1112223312),
+      ('Publisher D', 'Address C', 3568974155),
+      ('Publisher E', 'Address C', 9886632471);
+
+INSERT INTO BOOK (Book_id, Title, Publisher_Name, Pub_Year)
+VALUES
+    (1, 'Introduction to SQL', 'Publisher A', 2015),
+    (2, 'Data Science Basics', 'Publisher B', 2018),
+    (3, 'Programming in Python', 'Publisher C', 2020),
+    (4, 'Web Development Guide', 'Publisher A', 2017),
+    (5, 'Machine Learning Fundamentals', 'Publisher B', 2019);
+
+INSERT INTO BOOK_AUTHORS (Book_id, Author_Name)
+VALUES
+    (1, 'Author1'),
+    (1, 'Author2'),
+    (2, 'Author3'),
+    (3, 'Author4'),
+    (4, 'Author5');
+
+INSERT INTO LIBRARY_PROGRAMME (Programme_id, Programme_Name, Address)
+VALUES
+    (1, 'Programme A', 'Library A Address'),
+    (2, 'Programme B', 'Library B Address'),
+    (3, 'Programme C', 'Library C Address');
+    (4, 'Programme D', 'Library D Address');
+    (5, 'Programme E', 'Library E Address');
+
+INSERT INTO BOOK_COPIES (Book_id, Programme_id, No_of_Copies)
+VALUES
+    (1, 1, 5),
+    (2, 1, 3),
+    (3, 2, 2),
+    (4, 3, 7),
+    (5, 1, 4);
+
+INSERT INTO BOOK_LENDING (Book_id, Programme_id, Card_No, Date_Out, Due_Date)
+VALUES
+    (1, 1, 101, '2017-02-15', '2017-03-15'),
+    (2, 1, 101, '2017-04-20', '2017-05-20'),
+    (3, 2, 101, '2017-01-10', '2017-02-10'),
+    (4, 3, 104, '2017-06-05', '2017-07-05'),  
+    (5, 1, 105, '2019-04-12', '2019-05-12');
+
+1. Retrieve details of all books in the library – id, title, 
+name of publisher, authors, number of copies in each branch, etc.
+
+SELECT B.BOOK_ID, B.TITLE, B.PUBLISHER_NAME, BA.AUTHOR_NAME, BC.NO_OF_COPIES, LP.PROGRAMME_ID
+FROM BOOK B
+JOIN BOOK_AUTHORS BA ON B.BOOK_ID = BA.BOOK_ID
+JOIN BOOK_COPIES BC ON B.BOOK_ID = BC.BOOK_ID
+JOIN LIBRARY_PROGRAMME LP ON BC.PROGRAMME_ID = LP.PROGRAMME_ID;
+
++---------+-----------------------------+----------------+-------------+--------------+--------------+
+| BOOK_ID | TITLE                       | PUBLISHER_NAME | AUTHOR_NAME | NO_OF_COPIES | PROGRAMME_ID |
++---------+-----------------------------+----------------+-------------+--------------+--------------+
+| 1       | Introduction to SQL         | Publisher A    | Author1      | 5            | 1            |
+| 1       | Introduction to SQL         | Publisher A    | Author2      | 5            | 1            |
+| 2       | Data Science Basics         | Publisher B    | Author3      | 3            | 1            |
+| 3       | Programming in Python       | Publisher C    | Author4      | 2            | 2            |
+| 4       | Web Development Guide       | Publisher A    | Author5      | 7            | 3            |
+| 5       | Machine Learning Fundamentals| Publisher B    | Author1      | 4            | 1            |
++---------+-----------------------------+----------------+-------------+--------------+--------------+
+
+2. Get the particulars of borrowers who have borrowed more 
+than 1 books, but from Jan 2017 to Jun 2017.
+
+SELECT CARD_NO
+FROM BOOK_LENDING
+WHERE DATE_OUT BETWEEN '2017-01-01' AND '2017-07-30'
+GROUP BY CARD_NO
+HAVING COUNT(*) > 1;
++--------+
+| CARD_NO|
++--------+
+| 101    |
++--------+
+
+3. Delete a book in BOOK table. Update the contents of other 
+tables to reflect this data manipulation operation.
+
+Delete from Book where Book_id=4;
+
+Display content of BOOK table
+SELECT * FROM BOOK;
++---------+-----------------------------+----------------+--------+
+| Book_id | Title                       | Publisher_Name | Pub_Year |
++---------+-----------------------------+----------------+--------+
+| 1       | Introduction to SQL         | Publisher A    | 2015    |
+| 2       | Data Science Basics         | Publisher B    | 2018    |
+| 3       | Programming in Python       | Publisher C    | 2016    |
+| 5       | Machine Learning Fundamentals| Publisher B    | 2017    |
++---------+-----------------------------+----------------+--------+
+
+4. Partition the BOOK table based on year of publication. 
+Demonstrate its working with a simple query.
+
+CREATE VIEW V_PUBLICATION AS
+SELECT PUB_YEAR
+FROM BOOK;
+
+SELECT * FROM V_PUBLICATION;
+
++--------+
+| Pub_Year|
++--------+
+| 2015   |
+| 2018   |
+| 2016   |
+| 2017   |
+| 2017   |
++--------+
+
+5. Create a view of all books and its number of copies 
+that are currently available in the Library.
+
+CREATE VIEW V_BOOKS AS
+SELECT B.BOOK_ID, B.TITLE, BC.NO_OF_COPIES
+FROM BOOK B, BOOK_COPIES BC, LIBRARY_PROGRAMME LP
+WHERE B.BOOK_ID=BC.BOOK_ID
+AND BC.PROGRAMME_ID=LP.PROGRAMME_ID;
+
+SELECT * FROM V_BOOKS;
+
++---------+-----------------------------+-------------+
+| BOOK_ID | TITLE                       | NO_OF_COPIES|
++---------+-----------------------------+-------------+
+| 1       | Introduction to SQL         | 5           |
+| 2       | Data Science Basics         | 3           |
+| 3       | Programming in Python       | 2           |
+| 5       | Machine learning Fundamentals |4          |
++---------+-----------------------------+-------------+
